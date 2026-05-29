@@ -1,20 +1,41 @@
-from flask import Flask, request
 import sqlite3
 
-app = Flask(__name__)
+# Conexão com banco local
+conexao = sqlite3.connect("usuarios.db")
+cursor = conexao.cursor()
 
-@app.route('/user')
-def buscar_usuario():
+# Criando tabela
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario TEXT,
+    senha TEXT
+)
+""")
 
-    user_id = request.args.get("id")
+# Inserindo usuário de teste
+cursor.execute("DELETE FROM usuarios")
+cursor.execute("INSERT INTO usuarios (usuario, senha) VALUES ('admin', '123456')")
+conexao.commit()
 
-    conn = sqlite3.connect("banco.db")
+print("=== Sistema de Login ===")
 
-    cursor = conn.cursor()
+usuario = input("Usuário: ")
+senha = input("Senha: ")
 
-    cursor.execute(
-        f"SELECT * FROM users WHERE id = {user_id}"
-    )
+# CÓDIGO VULNERÁVEL A SQL INJECTION
+query = f"SELECT * FROM usuarios WHERE usuario = '{usuario}' AND senha = '{senha}'"
 
-    return str(cursor.fetchone())
+print("\nConsulta SQL gerada:")
+print(query)
+
+cursor.execute(query)
+resultado = cursor.fetchone()
+
+if resultado:
+    print("\nLogin realizado com sucesso!")
+else:
+    print("\nUsuário ou senha incorretos.")
+
+conexao.close()
     
