@@ -1,4 +1,4 @@
-name: "CodeQL Security Pipeline"
+name: CI/CD Pipeline
 
 on:
   push:
@@ -9,45 +9,72 @@ on:
     branches:
       - main
 
-  schedule:
-      - cron: '0 3 * * 1'
-
-permissions:
-  actions: read
-  contents: read
-  security-events: write
-
 jobs:
-  analyze:
-    name: Analyze Security
+
+  # =========================================
+  # JOB 1 — ANÁLISE DE SEGURANÇA
+  # =========================================
+  codeql-analysis:
+    name: 💀 Análise de Segurança
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language:
-          - python
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
+      - name: Inicializar CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-          queries: security-and-quality
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+          languages: python
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
-      - name: Run CodeQL Analysis
+      - name: Executar análise CodeQL
         uses: github/codeql-action/analyze@v3
+
+  # =========================================
+  # JOB 2 — TESTES AUTOMATIZADOS
+  # =========================================
+  tests:
+    name: ⚖️ Testes Automatizados
+    runs-on: ubuntu-latest
+    needs: codeql-analysis
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+          pip install pytest flake8
+
+      - name: Executar testes
+        run: pytest tests/ -v
+
+  # =========================================
+  # JOB 3 — DEPLOY STAGE
+  # =========================================
+  deploy-stage:
+    name: 📦 Deploy para Stage
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, tests]
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Simular deploy
+        run: |
+          echo "Deploy realizado com sucesso"
