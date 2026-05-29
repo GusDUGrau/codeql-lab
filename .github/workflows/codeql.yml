@@ -69,7 +69,7 @@ jobs:
   deploy-stage:
     name: ⚙️ Deploy para Stage
     runs-on: ubuntu-latest
-    needs: [codeql-analysis, testsSOCORRO]
+    needs: [codeql-analysis, tests]
 
     steps:
       - name: Checkout do código
